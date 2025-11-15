@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walmart Products</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .upload-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .upload-section input[type="file"] {
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .upload-section button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+
+        .upload-section button:hover {
+            background: #764ba2;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-image .no-image {
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        .product-info {
+            padding: 15px;
+        }
+
+        .product-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .product-brand {
+            color: #667eea;
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .product-price {
+            font-size: 1.3em;
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .product-rating {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .stars {
+            color: #f39c12;
+        }
+
+        .product-availability {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .availability-in-stock {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .availability-out-of-stock {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .no-products {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛒 Walmart Products</h1>
+
+        <div class="upload-section">
+            <input type="file" id="fileInput" accept=".jsonl" placeholder="Select product_info.jsonl">
+            <button onclick="loadFile()">Load Products</button>
+        </div>
+
+        <div id="error" class="error" style="display:none;"></div>
+        <div id="loading" class="loading" style="display:none;">Loading products...</div>
+        <div id="productsContainer" class="products-grid"></div>
+        <div id="noProducts" class="no-products" style="display:none;">No products loaded. Select your product_info.jsonl file to get started!</div>
+    </div>
+
+    <script>
+        async function loadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
+            const container = document.getElementById('productsContainer');
+            const noProducts = document.getElementById('noProducts');
+
+            errorDiv.style.display = 'none';
+            container.innerHTML = '';
+
+            if (!file) {
+                errorDiv.textContent = 'Please select a file first!';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+
+            try {
+                const text = await file.text();
+                const lines = text.trim().split('\n');
+                const products = lines.map(line => JSON.parse(line));
+
+                loadingDiv.style.display = 'none';
+
+                if (products.length === 0) {
+                    noProducts.style.display = 'block';
+                    return;
+                }
+
+                noProducts.style.display = 'none';
+
+                products.forEach(product => {
+                    const card = createProductCard(product);
+                    container.appendChild(card);
+                });
+
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                errorDiv.textContent = `Error: ${error.message}`;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function createProductCard(product) {
+            const card = document.createElement('div');
+            card.className = 'product-card';
+
+            const imageHtml = product.image_url 
+                ? `<img src="${product.image_url}" alt="${product.product_name || 'Product'}">`
+                : `<div class="no-image">No Image Available</div>`;
+
+            const availability = (product.availability || 'Unknown').toLowerCase();
+            const availabilityClass = availability.includes('in stock') || availability.includes('available') 
+                ? 'availability-in-stock' 
+                : 'availability-out-of-stock';
+
+            const rating = product.avg_rating ? `${product.avg_rating.toFixed(1)} ⭐` : 'No rating';
+            const reviewCount = product.review_count ? `(${product.review_count} reviews)` : '';
+
+            card.innerHTML = `
+                <div class="product-image">
+                    ${imageHtml}
+                </div>
+                <div class="product-info">
+                    <div class="product-name">${product.product_name || 'Unknown Product'}</div>
+                    ${product.brand ? `<div class="product-brand">By ${product.brand}</div>` : ''}
+                    <div class="product-price">$${product.price !== null && product.price !== undefined ? product.price.toFixed(2) : 'N/A'}</div>
+                    <div class="product-rating">
+                        <span class="stars">${rating}</span>
+                        <span>${reviewCount}</span>
+                    </div>
+                    <div class="product-availability ${availabilityClass}">
+                        ${product.availability || 'Status Unknown'}
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+    </script>
+</body>
+</html>
